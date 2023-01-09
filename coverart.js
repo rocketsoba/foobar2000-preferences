@@ -52,7 +52,7 @@ function on_paint(gr) {
         };
 
         var youtube_url = fb.Titleformat("%fy_url%").eval();
-        if (youtube_url != "" && artist.search('- Topic$') != -1) {
+        if (youtube_url != "" && artist.value.search('- Topic$') != -1) {
             g_img = g_img.Clone((g_img.Width - g_img.Height) / 2, 0, g_img.Height, g_img.Height);
             scale_w = content_w / g_img.Width;
             scale_h = wh / g_img.Height;
