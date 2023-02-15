@@ -3,7 +3,6 @@
 // @author "rockyakisoba"
 // @import "%fb2k_path%js\Flags.txt"
 // @import "%fb2k_path%js\Helpers.txt"
-// @import "%fb2k_path%js\Button.js"
 // @import "%fb2k_path%js\Buttons.js"
 // ==/PREPROCESSOR==
 
@@ -351,5 +350,12 @@ window.SetInterval(function() {
         window.Repaint();
     }
 }, 100);
+
+function on_playlist_items_added(playlist) {
+    if (fb.GetPlaylistName(playlist).search('Quicksearch') != -1) {
+        plman.SortByFormatV2(playlist, "%tracknumber%");
+        plman.SortByFormatV2(playlist, "%album%");
+    }
+}
 
 if (fb.IsPlaying) on_playback_new_track();
