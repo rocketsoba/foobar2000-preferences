@@ -51,6 +51,42 @@ function on_paint(gr) {
             size: gr.MeasureString(fb.Titleformat("%date%").eval(), text_font, 0, 0, ww, wh),
         };
 
+        var album_length = function() {
+            var total_length = 0.0;
+            var items = plman.GetPlaylistItems(plman.ActivePlaylist);
+            var target_field = "album";
+            var target_field_value = fb.GetNowPlaying().GetFileInfo().MetaValue(fb.GetNowPlaying().GetFileInfo().MetaFind(target_field), 0);
+
+            if (target_field_value === "") {
+                return "";
+            }
+
+            for (var i = 0; i < items.Count; i++) {
+                var playlist_item_target_field_value = items.Item(i).GetFileInfo().MetaValue(items.Item(i).GetFileInfo().MetaFind(target_field), 0);
+                if (playlist_item_target_field_value === target_field_value) {
+                    total_length += items.Item(i).Length;
+                }
+            }
+
+            if (total_length == 0) {
+                return "";
+            }
+
+            return "ALBUM: " + format_length(total_length);
+        };
+        var album_length_size = gr.MeasureString(album_length(), text_font, 0, 0, ww, wh);
+
+        var playlist_length = function() {
+            var total_length = 0.0;
+            var items = plman.GetPlaylistItems(plman.ActivePlaylist);
+            for (var i = 0; i < items.Count; i++) {
+                total_length += items.Item(i).Length;
+            }
+
+            return "PLAYLIST: " + format_length(total_length);
+        };
+        var playlist_length_size = gr.MeasureString(playlist_length(), text_font, 0, 0, ww, wh);
+
         var youtube_url = fb.Titleformat("%fy_url%").eval();
         if (youtube_url != "" && artist.value.search('- Topic$') != -1) {
             g_img = g_img.Clone((g_img.Width - g_img.Height) / 2, 0, g_img.Height, g_img.Height);
@@ -75,6 +111,10 @@ function on_paint(gr) {
         gr.DrawString(artist.value, text_font, text_color , (ww - artist.size.width) / 2, current_height, ww, wh);
         current_height += artist.size.height;
         gr.DrawString(date.value, text_font, text_color , (ww - date.size.width) / 2, current_height, ww, wh);
+        //current_height += date.size.height;
+        //gr.DrawString(album_length(), text_font, text_color , (ww - album_length_size.width) / 2, current_height, ww, wh);
+        //current_height += album_length_size.height;
+        //gr.DrawString(playlist_length(), text_font, text_color , (ww - playlist_length_size.width) / 2, current_height, ww, wh);
     }
 }
 
