@@ -86,6 +86,7 @@ function on_size() {
 function on_playback_new_track(metadb) {
     if (metadb) {
         utils.GetAlbumArtAsync(window.ID, metadb, coverart_id.front);
+        fb.RunMainMenuCommand("View/Playlist view/Activate now playing");
     }
     g_img = null;
 }
