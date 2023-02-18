@@ -145,24 +145,24 @@ var speed15 = {
         }
     },
 };
-var speed05 = {
+var mono_stereo = {
     img_list: [
-        gdi.Image(fb.FoobarPath + "icon/x0.5.png"),
-        gdi.Image(fb.FoobarPath + "icon/x0.5_transparent.png"),
+        gdi.Image(fb.FoobarPath + "icon/mono_consolas.png"),
+        gdi.Image(fb.FoobarPath + "icon/stereo_consolas.png"),
     ],
     scale: 0.3,
     w_offset: -300,
     h_offset: 18,
     click_func: function(info) {
-        if (info.speed != 0.5) {
-            info.speed = 0.5;
+        if (!info.mono) {
+            info.mono = true;
             info.seek_time = fb.PlaybackTime;
             info.seek_flag = true;
-            fb.RunMainMenuCommand("Playback/DSP settings/Speed x0.5");
+            fb.RunMainMenuCommand("Playback/DSP settings/Mono");
             fb.Stop();
             fb.Play();
         } else {
-            info.speed = 1.0;
+            info.mono = false;
             info.seek_time = fb.PlaybackTime;
             info.seek_flag = true;
             fb.RunMainMenuCommand("Playback/DSP settings/Default");
@@ -172,7 +172,7 @@ var speed05 = {
         return info;
     },
     select_draw_img_func: function(info) {
-        if (info.speed != 0.5) {
+        if (!info.mono) {
             return 1;
         } else {
             return 0;
@@ -207,6 +207,7 @@ var info = {
     seek_flag: false,
     seek_time: 0,
     prev_volume: 0,
+    mono: false,
 };
 var center_w;
 var center_h;
@@ -232,7 +233,7 @@ function on_size() {
     center_buttons.add(random);
     center_buttons.add(repeat);
     center_buttons.add(speed15);
-    center_buttons.add(speed05);
+    center_buttons.add(mono_stereo);
 
     right_buttons = new Buttons(right_w, center_h);
     right_buttons.add(volume);
