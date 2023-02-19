@@ -17,6 +17,7 @@ var bar_height = 5;
 var bar_w_offset = 7;
 var bar_end_padding = 500;
 var seekbar_clickable_height = 35;
+var tmp_seek_duration = 35;
 var default_cursor = IDC_ARROW;
 var knob = {
     src: gdi.Image(fb.FoobarPath + "icon/seekbar_knob.png"),
@@ -123,18 +124,24 @@ var speed15 = {
     click_func: function(info) {
         if (info.speed != 1.5) {
             info.speed = 1.5;
-            info.seek_time = fb.PlaybackTime;
-            info.seek_flag = true;
+            if (fb.PlaybackTime > tmp_seek_duration) {
+                info.first_seek_time = clamp(fb.PlaybackTime - tmp_seek_duration, 0, fb.PlaybackLength - 1);
+            } else {
+                info.first_seek_time = clamp(fb.PlaybackTime + tmp_seek_duration, 0, fb.PlaybackLength - 1);
+            }
+            info.second_seek_time = fb.PlaybackTime;
+            info.seek_flag = 2;
             fb.RunMainMenuCommand("Playback/DSP settings/Speed x1.5");
-            fb.Stop();
-            fb.Play();
         } else {
             info.speed = 1.0;
-            info.seek_time = fb.PlaybackTime;
-            info.seek_flag = true;
+            if (fb.PlaybackTime > tmp_seek_duration) {
+                info.first_seek_time = clamp(fb.PlaybackTime - tmp_seek_duration, 0, fb.PlaybackLength - 1);
+            } else {
+                info.first_seek_time = clamp(fb.PlaybackTime + tmp_seek_duration, 0, fb.PlaybackLength - 1);
+            }
+            info.second_seek_time = fb.PlaybackTime;
+            info.seek_flag = 2;
             fb.RunMainMenuCommand("Playback/DSP settings/Default");
-            fb.Stop();
-            fb.Play();
         }
         return info;
     },
@@ -157,18 +164,24 @@ var mono_stereo = {
     click_func: function(info) {
         if (!info.mono) {
             info.mono = true;
-            info.seek_time = fb.PlaybackTime;
-            info.seek_flag = true;
+            if (fb.PlaybackTime > tmp_seek_duration) {
+                info.first_seek_time = clamp(fb.PlaybackTime - tmp_seek_duration, 0, fb.PlaybackLength - 1);
+            } else {
+                info.first_seek_time = clamp(fb.PlaybackTime + tmp_seek_duration, 0, fb.PlaybackLength - 1);
+            }
+            info.second_seek_time = fb.PlaybackTime;
+            info.seek_flag = 2;
             fb.RunMainMenuCommand("Playback/DSP settings/Mono");
-            fb.Stop();
-            fb.Play();
         } else {
             info.mono = false;
-            info.seek_time = fb.PlaybackTime;
-            info.seek_flag = true;
+            if (fb.PlaybackTime > tmp_seek_duration) {
+                info.first_seek_time = clamp(fb.PlaybackTime - tmp_seek_duration, 0, fb.PlaybackLength - 1);
+            } else {
+                info.first_seek_time = clamp(fb.PlaybackTime + tmp_seek_duration, 0, fb.PlaybackLength - 1);
+            }
+            info.second_seek_time = fb.PlaybackTime;
+            info.seek_flag = 2;
             fb.RunMainMenuCommand("Playback/DSP settings/Default");
-            fb.Stop();
-            fb.Play();
         }
         return info;
     },
@@ -205,8 +218,9 @@ var center_buttons;
 var right_buttons;
 var info = {
     speed: 1.0,
-    seek_flag: false,
-    seek_time: 0,
+    seek_flag: 0,
+    first_seek_time: 0,
+    second_seek_time: 0,
     prev_volume: 0,
     mono: false,
 };
@@ -360,11 +374,18 @@ function on_playback_new_track() {
 // }
 
 window.SetInterval(function() {
-    if (info.seek_flag) {
-        if (fb.PlaybackTime < info.seek_time + 1 && fb.PlaybackTime > info.seek_time - 1) {
-            info.seek_flag = false;
+    if (info.seek_flag == 2) {
+        if (fb.PlaybackTime < info.first_seek_time + 1 && fb.PlaybackTime > info.first_seek_time - 1) {
+            info.seek_flag = 1;
         } else {
-            fb.PlaybackTime = info.seek_time;
+            fb.PlaybackTime = info.first_seek_time;
+        }
+    }
+    if (info.seek_flag == 1) {
+        if (fb.PlaybackTime < info.second_seek_time + 1 && fb.PlaybackTime > info.second_seek_time - 1) {
+            info.seek_flag = 0;
+        } else {
+            fb.PlaybackTime = info.second_seek_time;
         }
     }
     if (!g_drag) {
