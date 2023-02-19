@@ -16,6 +16,7 @@ var bar_played_color = RGB(46, 161, 229);
 var bar_height = 5;
 var bar_w_offset = 7;
 var bar_end_padding = 500;
+var seekbar_clickable_height = 35;
 var default_cursor = IDC_ARROW;
 var knob = {
     src: gdi.Image(fb.FoobarPath + "icon/seekbar_knob.png"),
@@ -217,6 +218,8 @@ var wh = 0;
 var g_pos = 0;
 var g_drag = false;
 var g_length = 1;
+var g_tooltip = window.CreateTooltip();
+var g_trackingMouse = false;
 
 
 function on_size() {
@@ -276,7 +279,8 @@ function on_mouse_lbtn_up(x, y) {
         g_length > 0 &&
         g_drag &&
         x > bar_end_padding &&
-        x < ww - bar_end_padding
+        x < ww - bar_end_padding &&
+        y > wh - seekbar_clickable_height
     ) {
         fb.PlaybackTime = g_length * g_pos / (ww - bar_end_padding * 2);
         on_mouse_move(x, y);
@@ -301,13 +305,32 @@ function on_mouse_move(x, y) {
     }
 
     if (
-        g_drag &&
         x > bar_end_padding &&
-        x < ww - bar_end_padding
+        x < ww - bar_end_padding &&
+        y > wh - seekbar_clickable_height
     ) {
-        g_pos = x - bar_end_padding;
-        window.Repaint();
+        if (g_drag) {
+            g_pos = x - bar_end_padding;
+            window.Repaint();
+        }
+        if (!g_trackingMouse) {
+            g_tooltip.Activate();
+            g_tooltip.TrackActivate = true;
+            g_trackingMouse = true;
+        }
+        g_tooltip.Text = format_length(g_length * (x - bar_end_padding) / (ww - bar_end_padding * 2));
+        g_tooltip.TrackPosition(x + 10, y + 20);
+    } else {
+        if (g_trackingMouse) {
+            g_trackingMouse = false;
+            g_tooltip.TrackActivate = false;
+        }
     }
+}
+
+function on_mouse_leave() {
+    g_trackingMouse = false;
+    g_tooltip.TrackActivate = false;
 }
 
 function on_playback_seek() {
