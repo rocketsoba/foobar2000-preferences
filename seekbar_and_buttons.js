@@ -113,17 +113,27 @@ var repeat = {
         }
     },
 };
-var speed15 = {
+var speed = {
     img_list: [
+        gdi.Image(fb.FoobarPath + "icon/x2.png"),
+        gdi.Image(fb.FoobarPath + "icon/x2_transparent.png"),
+        gdi.Image(fb.FoobarPath + "icon/x1.75.png"),
+        gdi.Image(fb.FoobarPath + "icon/x1.75_transparent.png"),
         gdi.Image(fb.FoobarPath + "icon/x1.5.png"),
         gdi.Image(fb.FoobarPath + "icon/x1.5_transparent.png"),
+        gdi.Image(fb.FoobarPath + "icon/x1.25.png"),
+        gdi.Image(fb.FoobarPath + "icon/x1.25_transparent.png"),
+        gdi.Image(fb.FoobarPath + "icon/x0.75.png"),
+        gdi.Image(fb.FoobarPath + "icon/x0.75_transparent.png"),
+        gdi.Image(fb.FoobarPath + "icon/x0.5.png"),
+        gdi.Image(fb.FoobarPath + "icon/x0.5_transparent.png"),
     ],
     scale: 0.3,
     w_offset: 210,
     h_offset: 18,
     click_func: function(info) {
-        if (info.speed != 1.5) {
-            info.speed = 1.5;
+        if (info.speed != info.target_speed) {
+            info.speed = info.target_speed;
             if (fb.PlaybackTime > tmp_seek_duration) {
                 info.first_seek_time = clamp(fb.PlaybackTime - tmp_seek_duration, 0, fb.PlaybackLength - 1);
             } else {
@@ -131,7 +141,7 @@ var speed15 = {
             }
             info.second_seek_time = fb.PlaybackTime;
             info.seek_flag = 2;
-            fb.RunMainMenuCommand("Playback/DSP settings/Speed x1.5");
+            fb.RunMainMenuCommand("Playback/DSP settings/Speed x" + info.target_speed);
         } else {
             info.speed = 1.0;
             if (fb.PlaybackTime > tmp_seek_duration) {
@@ -145,11 +155,73 @@ var speed15 = {
         }
         return info;
     },
+    right_click_func: function(x, y, info) {
+        var menu = window.CreatePopupMenu();
+
+        menu.AppendMenuItem(MF_STRING, 200, "x2.0");
+        menu.AppendMenuItem(MF_STRING, 175, "x1.75");
+        menu.AppendMenuItem(MF_STRING, 150, "x1.5");
+        menu.AppendMenuItem(MF_STRING, 125, "x1.25");
+        menu.AppendMenuItem(MF_STRING, 75, "x0.75");
+        menu.AppendMenuItem(MF_STRING, 50, "x0.5");
+        menu.CheckMenuRadioItem(1, 200, info.target_speed * 100);
+
+        var ret = menu.TrackPopupMenu(x, y);
+        menu.Dispose();
+        if (ret == 0) {
+            return info;
+        }
+        info.target_speed = ret / 100;
+
+        return info;
+    },
     select_draw_img_func: function(info) {
-        if (info.speed != 1.5) {
-            return 1;
-        } else {
-            return 0;
+        switch (info.target_speed) {
+            case 2:
+                if (info.speed == info.target_speed) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+                break;
+            case 1.75:
+                if (info.speed == info.target_speed) {
+                    return 2;
+                } else {
+                    return 3;
+                }
+                break;
+            case 1.5:
+                if (info.speed == info.target_speed) {
+                    return 4;
+                } else {
+                    return 5;
+                }
+                break;
+            case 1.25:
+                if (info.speed == info.target_speed) {
+                    return 6;
+                } else {
+                    return 7;
+                }
+                break;
+            case 0.75:
+                if (info.speed == info.target_speed) {
+                    return 8;
+                } else {
+                    return 9;
+                }
+                break;
+            case 0.5:
+                if (info.speed == info.target_speed) {
+                    return 10;
+                } else {
+                    return 11;
+                }
+                break;
+            default:
+                return 5;
+                break;
         }
     },
 };
@@ -218,6 +290,7 @@ var center_buttons;
 var right_buttons;
 var info = {
     speed: 1.0,
+    target_speed: 1.5,
     seek_flag: 0,
     first_seek_time: 0,
     second_seek_time: 0,
@@ -249,7 +322,7 @@ function on_size() {
     center_buttons.add(previous);
     center_buttons.add(random);
     center_buttons.add(repeat);
-    center_buttons.add(speed15);
+    center_buttons.add(speed);
     center_buttons.add(mono_stereo);
 
     right_buttons = new Buttons(right_w, center_h);
@@ -285,6 +358,12 @@ function on_mouse_lbtn_down(x, y) {
             g_drag = true;
             on_mouse_move(x, y);
         }
+    }
+}
+
+function on_mouse_rbtn_down(x, y) {
+    if (center_buttons.is_buttons_on_mouse(x, y)) {
+        info = center_buttons.mouse_rbtn_down(x, y, info);
     }
 }
 

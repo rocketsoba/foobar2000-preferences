@@ -3,7 +3,6 @@
 // @author "rockyakisoba"
 // @import "%fb2k_path%js\Flags.txt"
 // @import "%fb2k_path%js\Helpers.txt"
-// @import "%fb2k_path%js\Button.js"
 // ==/PREPROCESSOR==
 
 
@@ -65,6 +64,20 @@ function Buttons(base_x, base_y) {
         for (var i = 0; i < this.button_list.length; i++) {
             if (this.is_on_mouse(this.button_list[i], x, y)) {
                 status = this.button_list[i].click_func(info);
+                if (typeof(status) == "undefined") {
+                    status = info;
+                }
+                return info;
+            }
+        }
+        return info;
+    }
+
+    this.mouse_rbtn_down = function(x, y, info) {
+        var status;
+        for (var i = 0; i < this.button_list.length; i++) {
+            if (this.is_on_mouse(this.button_list[i], x, y) && typeof(this.button_list[i].right_click_func) !== "undefined") {
+                status = this.button_list[i].right_click_func(x, y, info);
                 if (typeof(status) == "undefined") {
                     status = info;
                 }
