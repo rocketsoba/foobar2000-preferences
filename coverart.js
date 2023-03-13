@@ -115,6 +115,35 @@ function on_paint(gr) {
         //gr.DrawString(album_length(), text_font, text_color , (ww - album_length_size.width) / 2, current_height, ww, wh);
         //current_height += album_length_size.height;
         //gr.DrawString(playlist_length(), text_font, text_color , (ww - playlist_length_size.width) / 2, current_height, ww, wh);
+
+        try {
+            if (plman.GetPlaylistName(plman.ActivePlaylist) === "Youtube") {
+                var fso = new ActiveXObject('Scripting.FileSystemObject');
+                var files = new Enumerator(fso.GetFolder(fb.FoobarPath + 'profile/foo_youtube/cache/img').Files);
+                var playlist_items = plman.GetPlaylistItems(plman.ActivePlaylist);
+                var files2 = new Array();
+
+                //なぜか知らんがイテレーターで回すとクソ遅いので配列に入れる
+                for (files.moveFirst(); !files.atEnd(); files.moveNext()){
+                    var date = new Date(files.item().DateLastModified);
+                    files2.push({name: files.item().Name, date: date.getFullYear() + "-" + ("0" + (date.getMonth() + 1)).slice(-2) + "-" + ("0" + date.getDate()).slice(-2) + " " + ("0" + date.getHours()).slice(-2) + ":" + ("0" + date.getMinutes()).slice(-2) + ":" + ("0" + date.getSeconds()).slice(-2)});
+                }
+
+                for (var i = 0; i < playlist_items.Count; i++) {
+                    var youtube_id = playlist_items.item(i).Path.match('www\.youtube\.com\/watch\\?v=(.+)');
+                    if (youtube_id !== null && playlist_items.item(i).GetFileInfo().MetaFind("ADDED") >= playlist_items.item(i).GetFileInfo().MetaCount) {
+                        for (var j = 0; j < files2.length; j++) {
+                            if (files2[j].name.search(youtube_id[1]) != -1 && files2[j].name.search('\.original$') != -1) {
+                                playlist_items.item(i).UpdateFileInfoSimple("ADDED", files2[j].date);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (exception) {
+        }
     }
 }
 
