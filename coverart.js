@@ -26,7 +26,7 @@ function on_paint(gr) {
     gr.FillSolidRect(0, 0, ww, wh, background_color);
 
     // カバーアートがあれば表示、なければno_cover.pngを表示、読込中またはmetadbが存在しない場合何も表示しない
-    if (g_img) {
+    if (g_img && fb.GetNowPlaying() !== null) {
         var content_w = ww - (padding_width * 2);
         var scale_w = content_w / g_img.Width;
         var scale_h = wh / g_img.Height;
