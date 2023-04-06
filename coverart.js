@@ -21,6 +21,7 @@ var no_cover_src = gdi.Image(fb.FoobarPath + "icon/no_cover.png")
 var g_img = null;
 var ww = 0;
 var wh = 0;
+var timerId = null;
 
 function on_paint(gr) {
     gr.FillSolidRect(0, 0, ww, wh, background_color);
@@ -33,6 +34,15 @@ function on_paint(gr) {
         var scale = Math.min(scale_w, scale_h);
         var pos_x = 0;
         var pos_y = 0;
+
+        if (fb.Titleformat("%bitrate%").eval() === "?") {
+            timerId = window.SetInterval(function() {
+                window.ClearInterval(timerId);
+                window.Repaint();
+            }, 5000);
+        } else {
+            timerId = null;
+        }
 
         var title = {
             value: fb.Titleformat("%title%").eval(),
@@ -49,6 +59,10 @@ function on_paint(gr) {
         var date = {
             value: fb.Titleformat("%date%").eval(),
             size: gr.MeasureString(fb.Titleformat("%date%").eval(), text_font, 0, 0, ww, wh),
+        };
+        var bitrate = {
+            value: fb.Titleformat("%codec%").eval() + " - " + fb.Titleformat("%bitrate%").eval() + "Kbps",
+            size: gr.MeasureString(fb.Titleformat("%codec%").eval() + "-" + fb.Titleformat("%bitrate%").eval() + "Kbps", text_font, 0, 0, ww, wh),
         };
 
         var album_length = function() {
@@ -111,7 +125,11 @@ function on_paint(gr) {
         gr.DrawString(artist.value, text_font, text_color , (ww - artist.size.width) / 2, current_height, ww, wh);
         current_height += artist.size.height;
         gr.DrawString(date.value, text_font, text_color , (ww - date.size.width) / 2, current_height, ww, wh);
-        //current_height += date.size.height;
+        if (fb.Titleformat("%bitrate%").eval() !== "?") {
+            current_height += date.size.height;
+            gr.DrawString(bitrate.value, text_font, text_color , (ww - bitrate.size.width) / 2, current_height, ww, wh);
+        }
+        //current_height += bitrate.size.height;
         //gr.DrawString(album_length(), text_font, text_color , (ww - album_length_size.width) / 2, current_height, ww, wh);
         //current_height += album_length_size.height;
         //gr.DrawString(playlist_length(), text_font, text_color , (ww - playlist_length_size.width) / 2, current_height, ww, wh);
