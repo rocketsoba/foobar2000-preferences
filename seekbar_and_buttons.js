@@ -18,7 +18,35 @@ var bar_w_offset = 7;
 var bar_end_padding = 500;
 var seekbar_clickable_height = 35;
 var tmp_seek_duration = 35;
+var incremental_random_flag = false;
 var default_cursor = IDC_ARROW;
+var FindLowestPlayCountItem = function(playlist_index, current_item) {
+    var items = plman.GetPlaylistItems(playlist_index);
+    var next_candidates = new Array();
+    var lowest_playcount = Number.MAX_VALUE;
+    var current_item_playcount;
+    var nowplaying_path = "";
+    try {
+        nowplaying_path = current_item.RawPath;
+    } catch(exception) {
+    }
+
+    for (var i = 0; i < items.Count; i++) {
+        current_item_playcount = Math.floor(fb.Titleformat("%play_count%").EvalWithMetadb(items.Item(i)));
+        if (current_item_playcount < lowest_playcount) {
+            lowest_playcount = current_item_playcount;
+            next_candidates = new Array();
+        }
+        if (current_item_playcount === lowest_playcount && items.Item(i).RawPath !== nowplaying_path) {
+            next_candidates.push(i);
+        }
+    }
+
+    var next_item = next_candidates[Math.floor(Math.random() * next_candidates.length)];
+    fb.trace("next: " + items.Item(next_item).Path);
+
+    return next_item;
+};
 var knob = {
     src: gdi.Image(fb.FoobarPath + "icon/seekbar_knob.png"),
     scale: 0.6,
@@ -70,6 +98,7 @@ var previous = {
 var random = {
     img_list: [
         gdi.Image(fb.FoobarPath + "icon/random.png"),
+        gdi.Image(fb.FoobarPath + "icon/random_incremental.png"),
         gdi.Image(fb.FoobarPath + "icon/random_transparent.png"),
     ],
     scale: 0.25,
@@ -78,15 +107,28 @@ var random = {
     click_func: function() {
         if (fb.PlaybackOrder == 4) {
             fb.PlaybackOrder = 0;
+            incremental_random_flag = true;
+            plman.FlushPlaybackQueue();
+
+            var next_item = FindLowestPlayCountItem(plman.ActivePlaylist, fb.GetNowPlaying());
+            plman.AddPlaylistItemToPlaybackQueue(plman.ActivePlaylist, next_item);
+        } else if (incremental_random_flag) {
+            fb.PlaybackOrder = 0;
+            incremental_random_flag = false;
+            plman.FlushPlaybackQueue();
         } else {
             fb.PlaybackOrder = 4;
+            incremental_random_flag = false;
+            plman.FlushPlaybackQueue();
         }
     },
     select_draw_img_func: function() {
         if (fb.PlaybackOrder == 4) {
             return 0;
-        } else {
+        } else if (incremental_random_flag) {
             return 1;
+        } else {
+            return 2;
         }
     },
 };
@@ -101,8 +143,10 @@ var repeat = {
     click_func: function() {
         if (fb.PlaybackOrder == 2) {
             fb.PlaybackOrder = 0;
+            incremental_random_flag = false;
         } else {
             fb.PlaybackOrder = 2;
+            incremental_random_flag = false;
         }
     },
     select_draw_img_func: function() {
@@ -445,6 +489,12 @@ function on_playback_new_track() {
     g_length = fb.PlaybackLength;
     g_pos = 0;
     g_drag = false;
+
+    plman.FlushPlaybackQueue();
+    if (incremental_random_flag) {
+        var next_item = FindLowestPlayCountItem(plman.ActivePlaylist, fb.GetNowPlaying());
+        plman.AddPlaylistItemToPlaybackQueue(plman.ActivePlaylist, next_item);
+    }
     window.Repaint();
 }
 
