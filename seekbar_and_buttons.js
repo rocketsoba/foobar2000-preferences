@@ -185,7 +185,13 @@ var speed = {
             }
             info.second_seek_time = fb.PlaybackTime;
             info.seek_flag = 2;
-            fb.RunMainMenuCommand("Playback/DSP settings/Speed x" + info.target_speed);
+
+            //JavaScriptはIEEE754という精度らしく、正確な算術ができないことに注意
+            if (info.target_speed == 1.26 || info.target_speed == 1.51 || info.target_speed == 1.76 || info.target_speed == 2.01) {
+                fb.RunMainMenuCommand("Playback/DSP settings/Speed x" + ((Math.round(info.target_speed * 100) - 1) / 100) + " Skip Silence");
+            } else {
+                fb.RunMainMenuCommand("Playback/DSP settings/Speed x" + info.target_speed);
+            }
         } else {
             info.speed = 1.0;
             if (fb.PlaybackTime > tmp_seek_duration) {
@@ -202,6 +208,10 @@ var speed = {
     right_click_func: function(x, y, info) {
         var menu = window.CreatePopupMenu();
 
+        menu.AppendMenuItem(MF_STRING, 201, "x2.0 Skip Silence");
+        menu.AppendMenuItem(MF_STRING, 176, "x1.75 Skip Silence");
+        menu.AppendMenuItem(MF_STRING, 151, "x1.5 Skip Silence");
+        menu.AppendMenuItem(MF_STRING, 126, "x1.25 Skip Silence");
         menu.AppendMenuItem(MF_STRING, 200, "x2.0");
         menu.AppendMenuItem(MF_STRING, 175, "x1.75");
         menu.AppendMenuItem(MF_STRING, 150, "x1.5");
@@ -221,6 +231,34 @@ var speed = {
     },
     select_draw_img_func: function(info) {
         switch (info.target_speed) {
+            case 2.01:
+                if (info.speed == info.target_speed) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+                break;
+            case 1.76:
+                if (info.speed == info.target_speed) {
+                    return 2;
+                } else {
+                    return 3;
+                }
+                break;
+            case 1.51:
+                if (info.speed == info.target_speed) {
+                    return 4;
+                } else {
+                    return 5;
+                }
+                break;
+            case 1.26:
+                if (info.speed == info.target_speed) {
+                    return 6;
+                } else {
+                    return 7;
+                }
+                break;
             case 2:
                 if (info.speed == info.target_speed) {
                     return 0;
