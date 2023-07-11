@@ -21,7 +21,6 @@ var no_cover_src = gdi.Image(fb.FoobarPath + "icon/no_cover.png")
 var g_img = null;
 var ww = 0;
 var wh = 0;
-var timerId = null;
 
 function on_paint(gr) {
     gr.FillSolidRect(0, 0, ww, wh, background_color);
@@ -35,13 +34,10 @@ function on_paint(gr) {
         var pos_x = 0;
         var pos_y = 0;
 
-        if (fb.Titleformat("%bitrate%").eval() === "?") {
-            timerId = window.SetInterval(function() {
-                window.ClearInterval(timerId);
+        if (fb.Titleformat("%bitrate%").eval() === "?" || fb.Titleformat("%bitrate%").eval() === "1") {
+            window.SetTimeout(function() {
                 window.Repaint();
             }, 5000);
-        } else {
-            timerId = null;
         }
 
         var title = {
@@ -61,7 +57,21 @@ function on_paint(gr) {
             size: gr.MeasureString(fb.Titleformat("%date%").eval(), text_font, 0, 0, ww, wh),
         };
         var bitrate = {
-            value: fb.Titleformat("%codec%").eval() + " - " + fb.Titleformat("%bitrate%").eval() + "Kbps",
+            value: function () {
+                var current_song = fb.GetNowPlaying().GetFileInfo();
+                var real_bitrate = "";
+                for (var i = 0; i < current_song.InfoCount; i++) {
+                    if (current_song.InfoName(i) === "bitrate") {
+                        real_bitrate = current_song.InfoValue(i);
+                    }
+                }
+
+                if (real_bitrate !== "") {
+                    return fb.Titleformat("%codec%").eval() + " - " + real_bitrate + "Kbps";
+                } else {
+                    return fb.Titleformat("%codec%").eval() + " - " + fb.Titleformat("%bitrate%").eval() + "Kbps";
+                }
+            },
             size: gr.MeasureString(fb.Titleformat("%codec%").eval() + "-" + fb.Titleformat("%bitrate%").eval() + "Kbps", text_font, 0, 0, ww, wh),
         };
 
@@ -125,9 +135,9 @@ function on_paint(gr) {
         gr.DrawString(artist.value, text_font, text_color , (ww - artist.size.width) / 2, current_height, ww, wh);
         current_height += artist.size.height;
         gr.DrawString(date.value, text_font, text_color , (ww - date.size.width) / 2, current_height, ww, wh);
-        if (fb.Titleformat("%bitrate%").eval() !== "?") {
+        if (fb.Titleformat("%bitrate%").eval() !== "?" && fb.Titleformat("%bitrate%").eval() !== "1") {
             current_height += date.size.height;
-            gr.DrawString(bitrate.value, text_font, text_color , (ww - bitrate.size.width) / 2, current_height, ww, wh);
+            gr.DrawString(bitrate.value(), text_font, text_color , (ww - bitrate.size.width) / 2, current_height, ww, wh);
         }
         //current_height += bitrate.size.height;
         //gr.DrawString(album_length(), text_font, text_color , (ww - album_length_size.width) / 2, current_height, ww, wh);
