@@ -19,6 +19,7 @@ var bar_end_padding = 500;
 var seekbar_clickable_height = 35;
 var tmp_seek_duration = 35;
 var incremental_random_flag = false;
+var persistant_stop_after_current_flag = false;
 var default_cursor = IDC_ARROW;
 var FindLowestPlayCountItem = function(playlist_index, current_item) {
     var items = plman.GetPlaylistItems(playlist_index);
@@ -107,6 +108,7 @@ var random = {
     click_func: function() {
         if (fb.PlaybackOrder == 4) {
             fb.PlaybackOrder = 0;
+            persistant_stop_after_current_flag = false;
             incremental_random_flag = true;
             plman.FlushPlaybackQueue();
 
@@ -114,10 +116,12 @@ var random = {
             plman.AddPlaylistItemToPlaybackQueue(plman.ActivePlaylist, next_item);
         } else if (incremental_random_flag) {
             fb.PlaybackOrder = 0;
+            persistant_stop_after_current_flag = false;
             incremental_random_flag = false;
             plman.FlushPlaybackQueue();
         } else {
             fb.PlaybackOrder = 4;
+            persistant_stop_after_current_flag = false;
             incremental_random_flag = false;
             plman.FlushPlaybackQueue();
         }
@@ -134,6 +138,7 @@ var random = {
 };
 var repeat = {
     img_list: [
+        gdi.Image(fb.FoobarPath + "icon/stop_after_current.png"),
         gdi.Image(fb.FoobarPath + "icon/repeat.png"),
         gdi.Image(fb.FoobarPath + "icon/repeat_transparent.png"),
     ],
@@ -141,19 +146,30 @@ var repeat = {
     w_offset: 140,
     h_offset: 20,
     click_func: function() {
-        if (fb.PlaybackOrder == 2) {
+        if (persistant_stop_after_current_flag) {
+            fb.PlaybackOrder = 2;
+            fb.StopAfterCurrent = false;
+            persistant_stop_after_current_flag = false;
+            incremental_random_flag = false;
+        } else if (fb.PlaybackOrder == 2)  {
             fb.PlaybackOrder = 0;
+            fb.StopAfterCurrent = false;
+            persistant_stop_after_current_flag = false;
             incremental_random_flag = false;
         } else {
-            fb.PlaybackOrder = 2;
+            fb.PlaybackOrder = 0;
+            fb.StopAfterCurrent = true;
+            persistant_stop_after_current_flag = true;
             incremental_random_flag = false;
         }
     },
     select_draw_img_func: function() {
-        if (fb.PlaybackOrder == 2) {
+        if (persistant_stop_after_current_flag) {
             return 0;
-        } else {
+        } else if (fb.PlaybackOrder == 2)  {
             return 1;
+        } else {
+            return 2;
         }
     },
 };
@@ -532,6 +548,9 @@ function on_playback_new_track() {
     if (incremental_random_flag) {
         var next_item = FindLowestPlayCountItem(plman.ActivePlaylist, fb.GetNowPlaying());
         plman.AddPlaylistItemToPlaybackQueue(plman.ActivePlaylist, next_item);
+    }
+    if (persistant_stop_after_current_flag) {
+        fb.StopAfterCurrent = true;
     }
     window.Repaint();
 }
