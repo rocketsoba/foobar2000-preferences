@@ -20,6 +20,9 @@ var seekbar_clickable_height = 35;
 var tmp_seek_duration = 35;
 var incremental_random_flag = false;
 var persistant_stop_after_current_flag = false;
+var force_next_flag = false;
+var seek_on_out_of_range_flag = false;
+var seek_on_out_of_range_time = Number.MAX_VALUE;
 var default_cursor = IDC_ARROW;
 var FindLowestPlayCountItem = function(playlist_index, current_item) {
     var items = plman.GetPlaylistItems(playlist_index);
@@ -48,6 +51,49 @@ var FindLowestPlayCountItem = function(playlist_index, current_item) {
 
     return next_item;
 };
+var SeekMetadataRange = function() {
+    var match;
+    var range = fb.GetNowPlaying().GetFileInfo().MetaValue(fb.GetNowPlaying().GetFileInfo().MetaFind("RANGE"), 0);
+    if ((match = range.match(/^([0-9\.]+)-/)) !== null) {
+        fb.PlaybackTime = match[1];
+    }
+    if ((match = range.match(/-([0-9\.]+)$/)) !== null) {
+        seek_on_out_of_range_flag = true;
+        seek_on_out_of_range_time = match[1];
+    }
+};
+var DoNextAction = function() {
+    var items = plman.GetPlaylistItems(plman.PlayingPlaylist);
+    var current_handle = fb.GetNowPlaying();
+    var next_index = -1;
+
+    if (!incremental_random_flag && !persistant_stop_after_current_flag && fb.PlaybackOrder == 0) {
+        // Default
+        next_index = items.Find(current_handle) + 1;
+    } else if (!incremental_random_flag && !persistant_stop_after_current_flag && fb.PlaybackOrder == 4) {
+        // Shuffle
+        next_index = Math.floor(Math.random() * items.Count);
+    } else if (incremental_random_flag){
+        // Incremental shuffle
+        next_index = FindLowestPlayCountItem(plman.PlayingPlaylist, current_handle);
+    } else if (!persistant_stop_after_current_flag && fb.PlaybackOrder == 2) {
+        // Repeat
+        next_index = items.Find(current_handle);
+    } else if (persistant_stop_after_current_flag) {
+        // Play Once
+    }
+
+    if (next_index >= 0 && next_index < items.Count) {
+        fb.RunContextCommandWithMetadb("Play", items.Item(next_index));
+        fb.trace("action next index: " + next_index);
+        fb.trace("action next: " + items.Item(next_index).Path);
+        fb.trace("action next title: :" + items.Item(next_index).GetFileInfo().MetaValue(items.Item(next_index).GetFileInfo().MetaFind("TITLE"), 0))
+    } else {
+        fb.RunMainMenuCommand("Playback/Stop");
+        fb.trace("action next: Stop");
+    }
+    force_next_flag = false;
+};
 var knob = {
     src: gdi.Image(fb.FoobarPath + "icon/seekbar_knob.png"),
     scale: 0.6,
@@ -62,6 +108,7 @@ var play = {
     w_offset: -30,
     h_offset: 20,
     click_func: function() {
+        fb.trace(fb.PlaybackTime);
         fb.PlayOrPause();
     },
     select_draw_img_func: function() {
@@ -110,6 +157,7 @@ var random = {
             fb.PlaybackOrder = 0;
             persistant_stop_after_current_flag = false;
             incremental_random_flag = true;
+            force_next_flag = true;
             plman.FlushPlaybackQueue();
 
             var next_item = FindLowestPlayCountItem(plman.ActivePlaylist, fb.GetNowPlaying());
@@ -118,11 +166,13 @@ var random = {
             fb.PlaybackOrder = 0;
             persistant_stop_after_current_flag = false;
             incremental_random_flag = false;
+            force_next_flag = true;
             plman.FlushPlaybackQueue();
         } else {
             fb.PlaybackOrder = 4;
             persistant_stop_after_current_flag = false;
             incremental_random_flag = false;
+            force_next_flag = true;
             plman.FlushPlaybackQueue();
         }
     },
@@ -151,16 +201,19 @@ var repeat = {
             fb.StopAfterCurrent = false;
             persistant_stop_after_current_flag = false;
             incremental_random_flag = false;
+            force_next_flag = true;
         } else if (fb.PlaybackOrder == 2)  {
             fb.PlaybackOrder = 0;
             fb.StopAfterCurrent = false;
             persistant_stop_after_current_flag = false;
             incremental_random_flag = false;
+            force_next_flag = true;
         } else {
             fb.PlaybackOrder = 0;
             fb.StopAfterCurrent = true;
             persistant_stop_after_current_flag = true;
             incremental_random_flag = false;
+            force_next_flag = true;
         }
     },
     select_draw_img_func: function() {
@@ -552,6 +605,13 @@ function on_playback_new_track() {
     if (persistant_stop_after_current_flag) {
         fb.StopAfterCurrent = true;
     }
+    fb.trace("on_playback_new_track()");
+    fb.trace("time: " + fb.PlaybackTime);
+    seek_on_out_of_range_flag = false;
+    seek_on_out_of_range_time = Number.MAX_VALUE;
+    if (fb.GetNowPlaying() && fb.PlaybackTime < 1) {
+        SeekMetadataRange();
+    }
     window.Repaint();
 }
 
@@ -573,6 +633,14 @@ window.SetInterval(function() {
         } else {
             fb.PlaybackTime = info.second_seek_time;
         }
+    }
+    if (force_next_flag && fb.PlaybackLength > 0.5 && fb.PlaybackTime > (fb.PlaybackLength - 0.5)) {
+        DoNextAction();
+    }
+    if (seek_on_out_of_range_flag && fb.PlaybackTime >= seek_on_out_of_range_time) {
+        seek_on_out_of_range_flag = false;
+        seek_on_out_of_range_time = Number.MAX_VALUE;
+        DoNextAction();
     }
     if (!g_drag) {
         if (g_length > 0) {
