@@ -476,7 +476,7 @@ function on_size() {
     center_buttons.add(speed);
     center_buttons.add(mono_stereo);
 
-    right_buttons = new Buttons(right_w, center_h);
+    right_buttons = new Buttons(ww - bar_end_padding + bar_end_padding * 1 / 3, center_h);
     right_buttons.add(volume);
 }
 
