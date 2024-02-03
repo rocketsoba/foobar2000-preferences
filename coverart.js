@@ -147,46 +147,67 @@ function on_paint(gr) {
 
         try {
             if (plman.GetPlaylistName(plman.ActivePlaylist) === "Youtube") {
-                var fso = new ActiveXObject('Scripting.FileSystemObject');
-                var wsh = new ActiveXObject('WScript.Shell');
-                var crop_count = 0;
-                var files = new Enumerator(fso.GetFolder(fb.FoobarPath + 'profile/foo_youtube/cache/img').Files);
                 var playlist_items = plman.GetPlaylistItems(plman.ActivePlaylist);
-                var files2 = new Array();
-
-                //なぜか知らんがイテレーターで回すとクソ遅いので配列に入れる
-                for (files.moveFirst(); !files.atEnd(); files.moveNext()){
-                    var date = new Date(files.item().DateLastModified);
-                    files2.push({name: files.item().Name, path: files.item().Path, date: date.getFullYear() + "-" + ("0" + (date.getMonth() + 1)).slice(-2) + "-" + ("0" + date.getDate()).slice(-2) + " " + ("0" + date.getHours()).slice(-2) + ":" + ("0" + date.getMinutes()).slice(-2) + ":" + ("0" + date.getSeconds()).slice(-2)});
-                }
-
+                var check_added_items = new Array();
+                var check_cropped_items = new Array();
                 for (var i = 0; i < playlist_items.Count; i++) {
                     var youtube_id = playlist_items.item(i).Path.match('www\.youtube\.com\/watch\\?v=(.+)');
-                    if (youtube_id === null) {
-                        continue;
-                    }
-                    if (playlist_items.item(i).GetFileInfo().MetaFind("ADDED") >= playlist_items.item(i).GetFileInfo().MetaCount) {
-                        for (var j = 0; j < files2.length; j++) {
-                            if (files2[j].name.search(youtube_id[1]) != -1 && files2[j].name.search('\.original$') != -1) {
-                                playlist_items.item(i).UpdateFileInfoSimple("ADDED", files2[j].date);
-                                break;
-                            }
-                        }
+                    if (
+                        youtube_id !== null &&
+                        playlist_items.item(i).GetFileInfo().MetaFind("ADDED") >= playlist_items.item(i).GetFileInfo().MetaCount &&
+                        utils.GetAlbumArtV2(playlist_items.item(i)) !== null
+                        ) {
+                        check_added_items.push(i);
                     }
                     if (
                         fb2khelper_path !== "" &&
+                        youtube_id !== null &&
                         playlist_items.item(i).GetFileInfo().MetaValue(playlist_items.item(i).GetFileInfo().MetaFind("ARTIST"), 0).search('- Topic$') != -1 &&
-                        playlist_items.item(i).GetFileInfo().MetaFind("CROPPED") >= playlist_items.item(i).GetFileInfo().MetaCount
+                        playlist_items.item(i).GetFileInfo().MetaFind("CROPPED") >= playlist_items.item(i).GetFileInfo().MetaCount &&
+                        utils.GetAlbumArtV2(playlist_items.item(i)) !== null
                         ) {
-                        for (var j = 0; j < files2.length; j++) {
-                            if (files2[j].name.search(youtube_id[1]) != -1 && files2[j].name.search('\.original$') != -1) {
-                                fb.trace("[" + crop_count + "]:" + playlist_items.item(i).GetFileInfo().MetaValue(playlist_items.item(i).GetFileInfo().MetaFind("ARTIST"), 0));
-                                crop_count++;
-                                var wsh_status = wsh.Run(fb2khelper_path + " crop-square \"" + files2[j].path + "\"", 0, true);
-                                if (wsh_status == 0) {
-                                    playlist_items.item(i).UpdateFileInfoSimple("CROPPED", 1);
+                        check_cropped_items.push(i);
+                    }
+                }
+
+                if (check_added_items.length !== 0 || check_cropped_items.length !== 0) {
+                    var fso = new ActiveXObject('Scripting.FileSystemObject');
+                    var files = new Enumerator(fso.GetFolder(fb.FoobarPath + 'profile/foo_youtube/cache/img').Files);
+                    var files2 = new Array();
+
+                    //なぜか知らんがイテレーターで回すとクソ遅いので配列に入れる
+                    for (files.moveFirst(); !files.atEnd(); files.moveNext()){
+                        var date = new Date(files.item().DateLastModified);
+                        files2.push({name: files.item().Name, path: files.item().Path, date: date.getFullYear() + "-" + ("0" + (date.getMonth() + 1)).slice(-2) + "-" + ("0" + date.getDate()).slice(-2) + " " + ("0" + date.getHours()).slice(-2) + ":" + ("0" + date.getMinutes()).slice(-2) + ":" + ("0" + date.getSeconds()).slice(-2)});
+                    }
+
+                    if (check_added_items.length !== 0) {
+                        for (var i = 0; i < check_added_items.length; i++) {
+                            var youtube_id = playlist_items.item(check_added_items[i]).Path.match('www\.youtube\.com\/watch\\?v=(.+)');
+                            for (var j = 0; j < files2.length; j++) {
+                                if (files2[j].name.search(youtube_id[1]) != -1 && files2[j].name.search('\.original$') != -1) {
+                                    playlist_items.item(check_added_items[i]).UpdateFileInfoSimple("ADDED", files2[j].date);
+                                    break;
                                 }
-                                break;
+                            }
+                        }
+                    }
+
+                    if (check_cropped_items.length !== 0) {
+                        var wsh = new ActiveXObject('WScript.Shell');
+                        var crop_count = 0;
+                        for (var i = 0; i < check_cropped_items.length; i++) {
+                            var youtube_id = playlist_items.item(check_cropped_items[i]).Path.match('www\.youtube\.com\/watch\\?v=(.+)');
+                            for (var j = 0; j < files2.length; j++) {
+                                if (files2[j].name.search(youtube_id[1]) != -1 && files2[j].name.search('\.original$') != -1) {
+                                    fb.trace("[" + crop_count + "]:" + playlist_items.item(check_cropped_items[i]).GetFileInfo().MetaValue(playlist_items.item(i).GetFileInfo().MetaFind("ARTIST"), 0));
+                                    crop_count++;
+                                    var wsh_status = wsh.Run(fb2khelper_path + " crop-square \"" + files2[j].path + "\"", 0, true);
+                                    if (wsh_status == 0) {
+                                        playlist_items.item(check_cropped_items[i]).UpdateFileInfoSimple("CROPPED", 1);
+                                    }
+                                    break;
+                                }
                             }
                         }
                     }
@@ -194,6 +215,7 @@ function on_paint(gr) {
             }
         }
         catch (exception) {
+            fb.trace(exception.message);
         }
     }
 }
