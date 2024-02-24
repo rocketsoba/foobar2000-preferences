@@ -97,7 +97,7 @@ var DoNextAction = function() {
 var knob = {
     src: gdi.Image(fb.FoobarPath + "icon/seekbar_knob.png"),
     scale: 0.6,
-    w_offset: - 16,
+    w_offset: - 11,
     h_offset: 0,
 };
 var play = {
@@ -450,7 +450,6 @@ var info = {
 };
 var center_w;
 var center_h;
-var right_w;
 var ww = 0;
 var wh = 0;
 var g_pos = 0;
@@ -465,7 +464,6 @@ function on_size() {
     wh = window.Height;
     center_w = ww / 2;
     center_h = wh / 2;
-    right_w = ww * 2 / 3 + ww * 1 / 9;
 
     center_buttons = new Buttons(center_w, 0);
     center_buttons.add(play);
@@ -487,7 +485,7 @@ function on_paint(gr) {
     gr.FillSolidRect(0, 0, ww, wh, background_color);
 
     gr.FillSolidRect(bar_end_padding, center_height, ww - bar_end_padding * 2, bar_height, bar_color);
-    gr.FillSolidRect(bar_end_padding, center_height, g_pos + knob.w_offset, bar_height, bar_played_color);
+    gr.FillSolidRect(bar_end_padding, center_height, g_pos + knob.w_offset + 9, bar_height, bar_played_color);
     gr.DrawImage(knob.src, g_pos + knob.w_offset + bar_end_padding, center_height - bar_w_offset, knob.src.Width * knob.scale, knob.src.Height * knob.scale, 0, 0, knob.src.Width, knob.src.Height);
     gr.DrawString(format_length(fb.PlaybackLength), text_font, text_color , ww - bar_end_padding + 10, center_height - 8, ww, wh);
     gr.DrawString(format_length(fb.PlaybackTime), text_font, text_color , bar_end_padding - 50, center_height - 8, ww, wh);
