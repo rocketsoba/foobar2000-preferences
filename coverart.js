@@ -140,10 +140,10 @@ function on_paint(gr) {
             current_height += date.size.height;
             gr.DrawString(bitrate.value(), text_font, text_color , (ww - bitrate.size.width) / 2, current_height, ww, wh);
         }
-        //current_height += bitrate.size.height;
+        current_height += bitrate.size.height;
         //gr.DrawString(album_length(), text_font, text_color , (ww - album_length_size.width) / 2, current_height, ww, wh);
         //current_height += album_length_size.height;
-        //gr.DrawString(playlist_length(), text_font, text_color , (ww - playlist_length_size.width) / 2, current_height, ww, wh);
+        gr.DrawString(playlist_length(), text_font, text_color , (ww - playlist_length_size.width) / 2, current_height, ww, wh);
 
         try {
             if (plman.GetPlaylistName(plman.ActivePlaylist) === "Youtube") {
@@ -162,7 +162,7 @@ function on_paint(gr) {
                     if (
                         fb2khelper_path !== "" &&
                         youtube_id !== null &&
-                        playlist_items.item(i).GetFileInfo().MetaValue(playlist_items.item(i).GetFileInfo().MetaFind("ARTIST"), 0).search('- Topic$') != -1 &&
+                        playlist_items.item(i).GetFileInfo().InfoValue(playlist_items.item(i).GetFileInfo().InfoFind("foo_youtube-description")).search('^Provided to YouTube') != -1 &&
                         playlist_items.item(i).GetFileInfo().MetaFind("CROPPED") >= playlist_items.item(i).GetFileInfo().MetaCount &&
                         utils.GetAlbumArtV2(playlist_items.item(i)) !== null
                         ) {
